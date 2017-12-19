@@ -46,91 +46,41 @@ test: $(VIRTUAL_ENV)/bin/py.test
 	$(VIRTUAL_ENV)/bin/py.test -xs tests.py
 
 
-WRK = wrk -d20s -c200 -t10 --timeout 10s -s scripts/cvs-report.lua
+WRK = wrk -d120s -c1 -t1 --timeout 1s -s scripts/cvs-report.lua
 bench: $(VIRTUAL_ENV)
 	@rm -f $(CURDIR)/results.csv
-	# aiohttp
-	@make aiohttp OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=aiohttp
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
-	# bottle
-	@make bottle OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=bottle
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
-	# django
-	@make django OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=django
-	@kill `cat $(CURDIR)/pid`
-	@sleep 4
-	# falcon
-	@make falcon OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=falcon
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
+	date
 	# flask
-	@make flask OPTS="-p pid -D -w 2"
+	@make flask OPTS="-p pid -D -w 1"
 	@sleep 2
 	@TESTEE=flask $(WRK) http://127.0.0.1:5000/json
-	@TESTEE=flask $(WRK) http://127.0.0.1:5000/remote
-	@TESTEE=flask $(WRK) http://127.0.0.1:5000/complete
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
-	# muffin
-	@make muffin OPTS="--daemon --pid $(CURDIR)/pid --workers 2"
-	@sleep 2
-	@make wrk TESTEE=muffin
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
-	# pyramid
-	@make pyramid OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=pyramid
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
-	# wheezy
-	@make wheezy OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=wheezy
 	@kill `cat $(CURDIR)/pid`
 	@sleep 3
 	# tornado
-	@make tornado OPTS="-p pid -D -w 2"
+	date
+	@make tornado OPTS="-p pid -D -w 1"
 	@sleep 2
 	@make wrk TESTEE=tornado
 	@kill `cat $(CURDIR)/pid`
 	@sleep 3
-	# weppy
-	@make weppy OPTS="-p pid -D -w 2"
-	@sleep 2
-	@make wrk TESTEE=weppy
-	@kill `cat $(CURDIR)/pid`
-	@sleep 3
 	# wsgi
-	@make wsgi OPTS="-p pid -D -w 2"
+	date
+	@make wsgi OPTS="-p pid -D -w 1"
 	@sleep 2
 	@make wrk TESTEE=wsgi
 	@kill `cat $(CURDIR)/pid`
 	@sleep 3
-	# twisted
-	# @make twisted OPTS="-pid &"
-	# @sleep 1
-	# @TESTEE=twisted $(WRK) http://127.0.0.1:5000/json
-	# @TESTEE=twisted $(WRK) http://127.0.0.1:5000/remote
-	# @TESTEE=twisted $(WRK) http://127.0.0.1:5000/complete
+	# flask plain
+	date
+	@make flask_plain
+	@sleep 2
+	@TESTEE=flask_plain $(WRK) http://127.0.0.1:5000/json
 	# @kill `cat $(CURDIR)/pid`
-	# @sleep 2
+	@sleep 3
 
 TESTEE = ""
 wrk:
 	TESTEE=$(TESTEE) $(WRK) http://127.0.0.1:5000/json
-	TESTEE=$(TESTEE) $(WRK) http://127.0.0.1:5000/remote
-	TESTEE=$(TESTEE) $(WRK) http://127.0.0.1:5000/complete
 
 OPTS = 
 aiohttp: $(VIRTUAL_ENV)
@@ -157,6 +107,10 @@ flask: $(VIRTUAL_ENV)
 	@DHOST=$(DHOST) $(VIRTUAL_ENV)/bin/gunicorn app:app $(OPTS) \
 	    -k meinheld.gmeinheld.MeinheldWorker --bind=127.0.0.1:5000 \
 	    --chdir=$(CURDIR)/frameworks/flask
+
+flask_plain: $(VIRTUAL_ENV)
+	@DHOST=$(DHOST) cd $(CURDIR)/frameworks/flask && FLASK_APP=app.py ../../$(VIRTUAL_ENV)/bin/flask run &
+
 
 muffin: $(VIRTUAL_ENV)
 	@cd $(CURDIR)/frameworks/muffin && \
